@@ -7,17 +7,19 @@ let projects = [];
 async function loadProjects() {
     try {
         const response = await fetch(`${API_BASE}/projects`);
+        if (!response.ok) throw new Error('Network response was not ok');
         projects = await response.json();
-
-        renderProjectSelector();
-
-        // Auto-select first project if exists
-        if (projects.length > 0 && !currentProjectId) {
-            currentProjectId = projects[0].id;
-            onProjectChange();
-        }
     } catch (error) {
         console.error('Failed to load projects:', error);
+        projects = []; // Ensure empty array on error
+    } finally {
+        renderProjectSelector(); // Always render, so empty state (with Create button) shows up
+    }
+
+    // Auto-select first project if exists
+    if (projects.length > 0 && !currentProjectId) {
+        currentProjectId = projects[0].id;
+        onProjectChange();
     }
 }
 
@@ -38,13 +40,18 @@ function renderProjectSelector() {
     const currentProject = projects.find(p => p.id === currentProjectId) || projects[0];
 
     container.innerHTML = `
-        <div class="project-selector">
-            <div class="project-icon">${currentProject.icon}</div>
-            <div class="project-info">
-                <div class="project-name">${escapeHtml(currentProject.name)}</div>
-                <div class="project-domain">${escapeHtml(currentProject.domain)}</div>
+        <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+            <div class="project-selector" style="flex: 1; min-width: 0;" onclick="toggleProjectDropdown()">
+                <div class="project-icon">${currentProject.icon}</div>
+                <div class="project-info">
+                    <div class="project-name">${escapeHtml(currentProject.name)}</div>
+                    <div class="project-domain">${escapeHtml(currentProject.domain)}</div>
+                </div>
+                <button class="btn-icon">▼</button>
             </div>
-            <button class="btn-icon" onclick="toggleProjectDropdown()">▼</button>
+            <button class="btn btn-primary" onclick="openProjectModal()" title="Create New Project" style="height: 100%; aspect-ratio: 1; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                +
+            </button>
         </div>
         
         <div class="project-dropdown" id="project-dropdown" style="display: none;">
@@ -65,6 +72,27 @@ function renderProjectSelector() {
             </div>
         </div>
     `;
+
+    renderRecentProjects();
+}
+
+function renderRecentProjects() {
+    const listContainer = document.getElementById('recent-projects-nav');
+    if (!listContainer) return;
+
+    if (projects.length === 0) {
+        listContainer.innerHTML = '<div class="text-muted" style="padding: 0.5rem 1rem; font-size: 0.75rem;">No projects yet</div>';
+        return;
+    }
+
+    listContainer.innerHTML = projects.map(p => `
+        <div class="nav-item ${p.id === currentProjectId ? 'active' : ''}" 
+             style="cursor: pointer; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 0; display: flex; align-items: center; gap: 8px; ${p.id === currentProjectId ? 'border-left: 3px solid var(--accent); background: rgba(255,255,255,0.05);' : ''}"
+             onclick="selectProject('${p.id}')">
+            <span style="font-size: 1rem;">${p.icon}</span> 
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</span>
+        </div>
+    `).join('');
 }
 
 function toggleProjectDropdown() {

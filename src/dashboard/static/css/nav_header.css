@@ -1,0 +1,15 @@
+/* Nav Section Header */
+.nav-section-header {
+    padding: 1rem 1rem 0.5rem 1rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--sidebar-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.nav-divider {
+    height: 1px;
+    background-color: var(--sidebar-border);
+    margin: 0.5rem 1rem 1rem 1rem;
+}

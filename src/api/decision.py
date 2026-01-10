@@ -19,7 +19,7 @@ You do not hallucinate data. If information is missing, you explicitly state it.
 When citing data, reference document IDs or timestamps provided in the context."""
 
 
-def call_llm(prompt: str, timeout: int = 60) -> str:
+def call_llm(prompt: str, timeout: int = 120) -> str:
     """
     Send grounded prompt to Mistral via Ollama.
     Falls back to heuristic response if Ollama is unavailable.
@@ -31,6 +31,7 @@ def call_llm(prompt: str, timeout: int = 60) -> str:
             "stream": False
         }
         
+        # Increased timeout to 120s for first-run latency
         response = requests.post(OLLAMA_API, json=payload, timeout=timeout)
         
         if response.status_code == 200:
@@ -38,6 +39,9 @@ def call_llm(prompt: str, timeout: int = 60) -> str:
         else:
             raise Exception(f"Ollama returned status {response.status_code}")
             
+    except requests.exceptions.Timeout:
+        print("LLM call timed out (120s). Using fallback.")
+        return generate_fallback_response(prompt)
     except Exception as e:
         # Fallback to heuristic response if Ollama not available
         print(f"LLM call failed: {e}. Using fallback logic.")
